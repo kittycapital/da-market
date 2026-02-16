@@ -37,7 +37,7 @@
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:16px;scroll-behavior:smooth;-webkit-font-smoothing:antialiased;overflow-x:hidden}
-body{font-family:var(--hv-font-body);background:var(--hv-bg-base);color:var(--hv-text-primary);line-height:1.6;overflow-x:hidden;overflow-y:hidden;scrollbar-width:none;-ms-overflow-style:none}
+body{font-family:var(--hv-font-body);background:var(--hv-bg-base);color:var(--hv-text-primary);line-height:1.6;overflow-x:hidden;overflow-y:auto;scrollbar-width:none;-ms-overflow-style:none}
 body::-webkit-scrollbar{display:none}
 ::selection{background:var(--hv-primary);color:#fff}
 
@@ -312,14 +312,28 @@ function renderTL(){var ds=[{k:'nearda',l:'NEAR DA',c:'#00C08B'},{k:'espresso',l
 function renderTable(){var e=E(),tr=TR(),tt=TT(),h='<table class="ctable"><thead><tr><th style="text-align:left">DA 레이어</th><th>타입</th><th>롤업 수</th><th>TVS</th><th>처리량</th><th>비용/MB</th><th>Finality</th></tr></thead><tbody>';e.forEach(function(x){var d=x[1];var tvlStr=d.tvlB>=1?'$'+d.tvlB.toFixed(2)+'B':'$'+(d.tvlB*1000).toFixed(1)+'M';h+='<tr><td><div class="da-name-cell"><div class="da-color-dot" style="background:'+d.color+'"></div><span class="da-label-text">'+d.nameKo+'</span></div></td><td><span class="da-type-badge">'+d.type+'</span></td><td>'+d.rollups+'개 ('+((d.rollups/tr)*100).toFixed(1)+'%)</td><td>'+tvlStr+' ('+((d.tvlB/tt)*100).toFixed(1)+'%)</td><td>'+d.tp+' MB/s</td><td>$'+d.cost+'</td><td>'+d.fin+'</td></tr>';});h+='</tbody></table>';document.getElementById('tableWrap').innerHTML=h;}
 
 /* IFRAME RESIZE */
-var _lh=0,_ht,_fid='hvDAMarket';
-function sendHeight(){clearTimeout(_ht);_ht=setTimeout(function(){var el=document.querySelector('.hv-page');var h=(el?el.offsetTop+el.offsetHeight+20:document.body.scrollHeight);if(Math.abs(h-_lh)>5){_lh=h;window.parent.postMessage({type:'resize',height:h,id:_fid},'*');window.parent.postMessage({height:h,id:_fid},'*');}},150);}
-window.addEventListener('resize',sendHeight);
-window.addEventListener('load',function(){sendHeight();setTimeout(sendHeight,500);setTimeout(sendHeight,1500);setTimeout(sendHeight,3000);});
-new MutationObserver(sendHeight).observe(document.body,{childList:true,subtree:true});
-setInterval(sendHeight,2000);
+var _lh=0,_fid='hvDAMarket';
+function sendHeight(){
+  var h=Math.max(
+    document.body.scrollHeight,
+    document.body.offsetHeight,
+    document.documentElement.scrollHeight,
+    document.documentElement.offsetHeight
+  );
+  if(Math.abs(h-_lh)>3){
+    _lh=h;
+    window.parent.postMessage({type:'resize',height:h,id:_fid},'*');
+    window.parent.postMessage({height:h,id:_fid},'*');
+    window.parent.postMessage(JSON.stringify({type:'resize',height:h,id:_fid}),'*');
+  }
+}
+window.addEventListener('resize',function(){setTimeout(sendHeight,200);});
+window.addEventListener('load',function(){sendHeight();[300,600,1000,2000,4000].forEach(function(t){setTimeout(sendHeight,t);});});
+new ResizeObserver(sendHeight).observe(document.body);
+new MutationObserver(sendHeight).observe(document.body,{childList:true,subtree:true,attributes:true});
+setInterval(sendHeight,1500);
 
-async function init(){await fetchLlama();renderStats();renderKpis();renderPieRollup();renderPieTVL();renderBarTP();renderBarCost();renderTL();renderTable();sendHeight();}
+async function init(){await fetchLlama();renderStats();renderKpis();renderPieRollup();renderPieTVL();renderBarTP();renderBarCost();renderTL();renderTable();sendHeight();requestAnimationFrame(sendHeight);}
 init();
 </script>
 </body>
