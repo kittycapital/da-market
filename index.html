@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>DA 마켓 점유율 | Herdvibe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.1/kakao.min.js" crossorigin="anonymous" async></script>
+<style>
+:root {
+  --hv-primary:#3b82f6;--hv-primary-light:#60a5fa;--hv-primary-dark:#2563eb;
+  --hv-primary-glow:rgba(59,130,246,0.12);
+  --hv-up:#22c55e;--hv-up-bg:rgba(34,197,94,0.1);
+  --hv-down:#ef4444;--hv-down-bg:rgba(239,68,68,0.1);
+  --hv-warning:#f59e0b;--hv-warning-bg:rgba(245,158,11,0.1);
+  --hv-neutral:#6b7280;
+  --hv-bg-base:#000;--hv-bg-surface:#0a0a0a;--hv-bg-card:#111;
+  --hv-bg-card-hover:#181818;--hv-bg-elevated:#1a1a1a;
+  --hv-text-primary:#e5e5e5;--hv-text-secondary:#8a8a8a;
+  --hv-text-tertiary:#555;--hv-text-muted:#3a3a3a;
+  --hv-border:rgba(255,255,255,0.06);--hv-border-strong:rgba(255,255,255,0.12);
+  --hv-font-display:'Plus Jakarta Sans',sans-serif;
+  --hv-font-body:'Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif;
+  --hv-font-mono:'JetBrains Mono','SF Mono',monospace;
+  --hv-space-xs:8px;--hv-space-sm:12px;--hv-space-md:16px;
+  --hv-space-lg:24px;--hv-space-xl:32px;
+  --hv-radius-sm:6px;--hv-radius-md:10px;--hv-radius-lg:14px;
+  --hv-shadow-sm:0 1px 3px rgba(0,0,0,.5);--hv-shadow-lg:0 8px 32px rgba(0,0,0,.7);
+  --hv-transition-fast:150ms ease;--hv-transition:250ms ease;
+  --hv-max-width:1280px;--hv-header-height:60px;
+  --blue:#4a9eff;--cyan:#00e5cc;--red:#ff4a6a;--orange:#ff8c42;
+  --yellow:#ffd642;--green:#42ff8c;--purple:#a855f7;
+  --da-eth:#627EEA;--da-celestia:#9B59B6;--da-eigenda:#1CC8EE;
+  --da-avail:#2ECC71;--da-dac:#F39C12;--da-other:#6366f1;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body{font-family:var(--hv-font-body);background:var(--hv-bg-base);color:var(--hv-text-primary);line-height:1.6;overflow-x:hidden;overflow-y:hidden;scrollbar-width:none;-ms-overflow-style:none}
+body::-webkit-scrollbar{display:none}
+::selection{background:var(--hv-primary);color:#fff}
+
+.hv-header{position:sticky;top:0;z-index:100;height:var(--hv-header-height);background:rgba(0,0,0,.9);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid var(--hv-border);display:flex;align-items:center;padding:0 var(--hv-space-lg)}
+.hv-header-inner{width:100%;max-width:var(--hv-max-width);margin:0 auto;display:flex;align-items:center;justify-content:center;gap:var(--hv-space-md)}
+.hv-header-center{display:flex;flex-direction:column;min-width:0;text-align:center}
+.hv-header-center h1{font-family:var(--hv-font-display);font-size:1.3rem;font-weight:600;color:var(--hv-text-primary);white-space:nowrap}
+.hv-header-category{font-size:.7rem;color:var(--hv-text-tertiary);font-weight:500;text-transform:uppercase;letter-spacing:.08em}
+.hv-header-right{display:flex;align-items:center;gap:var(--hv-space-xs);flex-shrink:0}
+.hv-update-badge{font-family:var(--hv-font-mono);font-size:.688rem;color:var(--hv-text-tertiary);white-space:nowrap;display:flex;align-items:center;gap:6px}
+.hv-live-dot{width:5px;height:5px;background:var(--hv-up);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.hv-page{max-width:var(--hv-max-width);margin:0 auto;padding:var(--hv-space-lg)}
+.dash-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+.card{background:var(--hv-bg-card);border:1px solid var(--hv-border);border-radius:var(--hv-radius-lg);padding:18px 20px 16px;position:relative;overflow:visible;animation:fadeUp .5s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.card-label{font-family:var(--hv-font-mono);font-size:10px;font-weight:500;color:var(--hv-text-muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:4px;text-align:center}
+.card-title{font-size:15px;font-weight:700;margin-bottom:2px;display:flex;align-items:center;justify-content:center;gap:7px}
+.card-desc{font-size:11.5px;color:var(--hv-text-secondary);margin-bottom:14px;line-height:1.5;text-align:center}
+.s12{grid-column:span 12}.s6{grid-column:span 6}
+
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.stat{background:rgba(255,255,255,.02);border:1px solid var(--hv-border);border-radius:8px;padding:12px 14px;text-align:center;position:relative;overflow:hidden}
+.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.stat:nth-child(1)::before{background:var(--da-eth)}
+.stat:nth-child(2)::before{background:var(--da-celestia)}
+.stat:nth-child(3)::before{background:var(--da-eigenda)}
+.stat:nth-child(4)::before{background:var(--da-avail)}
+.stat-label{font-family:var(--hv-font-mono);font-size:10px;color:var(--hv-text-tertiary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.stat-val{font-family:var(--hv-font-mono);font-size:22px;font-weight:700;line-height:1.2}
+.stat-sub{font-size:10px;color:var(--hv-text-secondary);margin-top:3px}
+
+.da-kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.da-kpi{background:rgba(255,255,255,.02);border:1px solid var(--hv-border);border-radius:8px;padding:14px;position:relative;overflow:hidden;transition:all .2s}
+.da-kpi:hover{border-color:var(--hv-border-strong);background:var(--hv-bg-card-hover)}
+.da-kpi-bar{position:absolute;top:0;left:0;right:0;height:2px}
+.da-kpi-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.da-kpi-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.da-kpi-name{font-family:var(--hv-font-mono);font-weight:700;font-size:13px}
+.da-kpi-type{font-size:9px;padding:2px 6px;border-radius:3px;background:rgba(255,255,255,.04);color:var(--hv-text-tertiary);font-family:var(--hv-font-mono);margin-left:auto}
+.da-kpi-row{display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px}
+.da-kpi-row .label{color:var(--hv-text-tertiary)}
+.da-kpi-row .value{font-family:var(--hv-font-mono);font-weight:600;color:var(--hv-text-primary)}
+
+.chart-wrap{position:relative;width:100%;height:320px}
+.chart-wrap canvas{width:100%!important;height:100%!important}
+.chart-badge{font-size:10px;font-family:var(--hv-font-mono);padding:3px 8px;border-radius:4px;background:rgba(0,229,204,.08);color:var(--cyan);border:1px solid rgba(0,229,204,.2)}
+
+.twrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.ctable{width:100%;border-collapse:collapse;min-width:700px}
+.ctable th{padding:10px 12px;font-size:11px;font-weight:600;color:var(--hv-text-secondary);letter-spacing:.3px;border-bottom:1px solid var(--hv-border);text-align:right;white-space:nowrap}
+.ctable th:first-child{text-align:left}
+.ctable td{padding:11px 12px;border-bottom:1px solid var(--hv-border);text-align:right;font-family:var(--hv-font-mono);font-size:12px;white-space:nowrap;color:var(--hv-text-primary)}
+.ctable td:first-child{text-align:left;font-family:var(--hv-font-body)}
+.ctable tr:hover td{background:var(--hv-bg-card-hover)}
+.da-name-cell{display:flex;align-items:center;gap:8px}
+.da-color-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.da-label-text{font-weight:600;font-size:13px}
+.da-type-badge{font-size:9px;padding:2px 6px;border-radius:3px;background:rgba(255,255,255,.04);color:var(--hv-text-tertiary);font-family:var(--hv-font-mono)}
+.source-info{font-size:11px;color:var(--hv-text-tertiary);line-height:1.7;padding:14px 0 0}
+.source-info a{color:var(--blue);text-decoration:none}
+.source-info a:hover{text-decoration:underline}
+
+.share-bar{display:flex;align-items:center;justify-content:space-between;padding:12px var(--hv-space-lg);border-top:1px solid var(--hv-border);background:var(--hv-bg-surface);border-radius:0 0 var(--hv-radius-lg) var(--hv-radius-lg)}
+.share-bar-preview{font-size:.75rem;color:var(--hv-text-tertiary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:50%;line-height:1.4;font-family:var(--hv-font-mono)}
+.share-bar-preview span{color:var(--hv-text-secondary);font-weight:500}
+.share-bar-buttons{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.share-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;font-size:.75rem;font-weight:600;font-family:var(--hv-font-body);cursor:pointer;transition:all var(--hv-transition-fast);border:1px solid var(--hv-border-strong);background:var(--hv-bg-card);color:#999;white-space:nowrap}
+.share-btn:hover{transform:translateY(-1px);box-shadow:var(--hv-shadow-sm);color:var(--hv-text-primary)}
+.share-btn svg{flex-shrink:0}
+.share-btn--x:hover{border-color:#fff;color:#fff;background:#111}
+.share-btn--kakao:hover{border-color:#FEE500;color:#191919;background:#FEE500}
+.share-btn--tg:hover{border-color:#26A5E4;color:#fff;background:rgba(38,165,228,.15)}
+.share-btn--ig:hover{border-color:#E4405F;color:#fff;background:rgba(228,64,95,.15)}
+.share-btn--copy:hover{border-color:var(--hv-primary);color:var(--hv-primary-light);background:var(--hv-primary-glow)}
+
+.status-bar{display:flex;gap:14px;font-size:10px;color:var(--hv-text-tertiary);flex-wrap:wrap;justify-content:center;margin-top:6px}
+.ok{color:var(--green)}.ld{color:var(--orange)}.fl{color:var(--red)}
+
+.toast-wrap{position:fixed;bottom:20px;right:20px;z-index:200;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--hv-bg-elevated);border:1px solid var(--hv-border-strong);border-radius:var(--hv-radius-md);padding:10px 18px;font-size:.788rem;color:var(--hv-text-primary);box-shadow:var(--hv-shadow-lg);animation:toastIn .3s ease;border-left:3px solid var(--hv-up)}
+@keyframes toastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+@media(max-width:1024px){.s6{grid-column:span 12}.da-kpi-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:768px){
+  :root{--hv-header-height:52px}
+  .hv-page{padding:var(--hv-space-md)}.hv-header{padding:0 var(--hv-space-md)}
+  .hv-update-badge{display:none}.dash-grid{gap:10px}
+  .card{padding:14px 14px 12px}.card-title{font-size:14px}
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .da-kpi-grid{grid-template-columns:1fr 1fr}
+  .chart-wrap{height:260px}
+  .share-bar{flex-direction:column;gap:10px;align-items:stretch}
+  .share-bar-preview{max-width:100%}
+  .share-bar-buttons{justify-content:center;flex-wrap:wrap}
+  .share-btn span.label-text{display:none}.share-btn{padding:8px 10px}
+}
+@media(max-width:520px){.hv-page{padding:12px 10px 24px}.stats-row{grid-template-columns:1fr 1fr}.da-kpi-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header class="hv-header">
+  <div class="hv-header-inner">
+    <div class="hv-header-center">
+      <h1>DA 마켓 점유율</h1>
+      <span class="hv-header-category">Data Availability · Market Share</span>
+    </div>
+    <div class="hv-header-right">
+      <div class="hv-update-badge"><span class="hv-live-dot"></span><span id="lastUpdate">업데이트 중</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="hv-page">
+  <div class="dash-grid">
+
+    <div class="card s12" style="animation-delay:.05s">
+      <div class="card-label">OVERVIEW</div>
+      <div class="stats-row">
+        <div class="stat"><div class="stat-label">전체 L2/L3</div><div class="stat-val" id="totalProjects">—</div><div class="stat-sub">L2Beat 기준</div></div>
+        <div class="stat"><div class="stat-label">전체 TVS</div><div class="stat-val" id="totalTVS">—</div><div class="stat-sub">Total Value Secured</div></div>
+        <div class="stat"><div class="stat-label">Ethereum DA</div><div class="stat-val" id="ethShare">—</div><div class="stat-sub">Blobs + Calldata</div></div>
+        <div class="stat"><div class="stat-label">Alt-DA</div><div class="stat-val" id="altDaShare">—</div><div class="stat-sub">EigenDA · Celestia · Avail · 기타</div></div>
+      </div>
+      <div class="status-bar">
+        <span>DefiLlama: <span id="sApi" class="ld">···</span></span>
+        <span>데이터: <span id="sData" class="ok">리서치 기반</span></span>
+      </div>
+    </div>
+
+    <div class="card s12" style="animation-delay:.1s">
+      <div class="card-label">DA LAYERS</div>
+      <div class="card-title">DA 레이어별 현황</div>
+      <div class="card-desc">Ethereum · EigenDA · Celestia · Avail · Espresso · NEAR</div>
+      <div class="da-kpi-grid" id="daKpiGrid"></div>
+    </div>
+
+    <div class="card s6" style="animation-delay:.15s">
+      <div class="card-label">ROLLUP COUNT</div>
+      <div class="card-title">DA별 롤업 수</div>
+      <div class="card-desc">프로젝트 수 기준 점유율</div>
+      <div class="chart-wrap"><canvas id="pieRollupCount"></canvas></div>
+    </div>
+
+    <div class="card s6" style="animation-delay:.2s">
+      <div class="card-label">TVL SHARE</div>
+      <div class="card-title">DA별 TVS 점유율</div>
+      <div class="card-desc">Total Value Locked 기준</div>
+      <div class="chart-wrap"><canvas id="pieTVL"></canvas></div>
+    </div>
+
+    <div class="card s6" style="animation-delay:.25s">
+      <div class="card-label">THROUGHPUT</div>
+      <div class="card-title">처리량 비교 <span class="chart-badge">최대 MB/s</span></div>
+      <div class="card-desc">DA 레이어별 최대 처리량</div>
+      <div class="chart-wrap"><canvas id="barThroughput"></canvas></div>
+    </div>
+
+    <div class="card s6" style="animation-delay:.3s">
+      <div class="card-label">COST</div>
+      <div class="card-title">비용 비교 <span class="chart-badge">$/MB</span></div>
+      <div class="card-desc">DA 레이어별 MB당 비용 (로그 스케일)</div>
+      <div class="chart-wrap"><canvas id="barCost"></canvas></div>
+    </div>
+
+    <div class="card s12" style="animation-delay:.35s">
+      <div class="card-label">MARKET TREND</div>
+      <div class="card-title">DA 마켓 점유율 추이 (추정)</div>
+      <div class="card-desc">롤업 수 기준 · 2023~2025</div>
+      <div class="chart-wrap" style="height:300px"><canvas id="lineTimeline"></canvas></div>
+      <div class="share-bar" style="margin-top:14px;border-top:1px solid var(--hv-border);border-radius:0">
+        <div class="share-bar-preview"><span>DA 마켓 점유율 추이</span> — herdvibe.com</div>
+        <div class="share-bar-buttons">
+          <button class="share-btn share-btn--x" onclick="doShare('twitter')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg><span class="label-text">트위터</span></button>
+          <button class="share-btn share-btn--kakao" onclick="doShare('kakao')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.463 2 10.691c0 2.724 1.8 5.112 4.508 6.458l-1.148 4.265a.5.5 0 0 0 .764.533l4.94-3.26c.304.02.612.03.936.03 5.523 0 10-3.462 10-7.735C22 6.463 17.523 3 12 3z"/></svg><span class="label-text">카카오톡</span></button>
+          <button class="share-btn share-btn--tg" onclick="doShare('telegram')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg><span class="label-text">텔레그램</span></button>
+          <button class="share-btn share-btn--ig" onclick="doShare('instagram',this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg><span class="label-text">인스타</span></button>
+          <button class="share-btn share-btn--copy" onclick="doShare('link',this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span class="label-text">링크 복사</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card s12" style="animation-delay:.4s">
+      <div class="card-label">COMPARISON</div>
+      <div class="card-title">DA 레이어 상세 비교</div>
+      <div class="card-desc">L2Beat · 공식 문서 기반 데이터</div>
+      <div class="twrap" id="tableWrap"></div>
+      <div class="source-info">
+        <strong>데이터 소스:</strong> L2Beat DA Summary, DefiLlama, 공식 문서 기반 집계 (2025년 리서치).<br>
+        <strong>참고:</strong> TVS(Total Value Secured)는 L2Beat 기준. DefiLlama API 실시간 수집 시도 후 fallback 사용.<br>
+        <strong>참조:</strong>
+        <a href="https://l2beat.com/data-availability/summary" target="_blank">L2Beat DA</a> ·
+        <a href="https://defillama.com/chains" target="_blank">DefiLlama</a> ·
+        <a href="https://docs.eigenlayer.xyz/eigenda/overview" target="_blank">EigenDA</a> ·
+        <a href="https://celestia.org" target="_blank">Celestia</a> ·
+        <a href="https://availproject.org" target="_blank">Avail</a> ·
+        <a href="https://docs.espressosys.com" target="_blank">Espresso</a> ·
+        <a href="https://docs.near.org/concepts/abstraction/chain-signatures" target="_blank">NEAR DA</a>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="background:var(--hv-bg-card);border:1px solid var(--hv-border);border-radius:var(--hv-radius-lg);margin-top:var(--hv-space-lg);overflow:hidden">
+    <div class="share-bar" style="border-top:none">
+      <div class="share-bar-preview"><span>DA 마켓 점유율</span> — herdvibe.com</div>
+      <div class="share-bar-buttons">
+        <button class="share-btn share-btn--x" onclick="doShare('twitter')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg><span class="label-text">트위터</span></button>
+        <button class="share-btn share-btn--kakao" onclick="doShare('kakao')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3C6.477 3 2 6.463 2 10.691c0 2.724 1.8 5.112 4.508 6.458l-1.148 4.265a.5.5 0 0 0 .764.533l4.94-3.26c.304.02.612.03.936.03 5.523 0 10-3.462 10-7.735C22 6.463 17.523 3 12 3z"/></svg><span class="label-text">카카오톡</span></button>
+        <button class="share-btn share-btn--tg" onclick="doShare('telegram')"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg><span class="label-text">텔레그램</span></button>
+        <button class="share-btn share-btn--ig" onclick="doShare('instagram',this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg><span class="label-text">인스타</span></button>
+        <button class="share-btn share-btn--copy" onclick="doShare('link',this)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span class="label-text">링크 복사</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== SHARE ===== */
+var SHARE_URL='https://herdvibe.com/da-market';
+function ensureKakao(){try{if(typeof Kakao!=='undefined'&&!Kakao.isInitialized())Kakao.init('a43ed7b39fac35458f4f9df925a279b5');return typeof Kakao!=='undefined'&&Kakao.isInitialized();}catch(e){return false;}}
+ensureKakao();
+function copyToClipboard(t){try{window.parent.postMessage({type:'clipboard',text:t},'*');}catch(e){}try{navigator.clipboard.writeText(t);}catch(e){}}
+function flashCopied(btn){if(!btn)return;var o=btn.innerHTML;btn.style.background='#22c55e';btn.style.color='#fff';btn.style.borderColor='#22c55e';btn.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M5 13l4 4L19 7"/></svg><span class="label-text" style="color:#fff">복사됨!</span>';setTimeout(function(){btn.style.background='';btn.style.color='';btn.style.borderColor='';btn.innerHTML=o;},2000);}
+function doShare(p,btn){var u=SHARE_URL,t=encodeURIComponent('DA 마켓 점유율 대시보드 | herdvibe.com'),eu=encodeURIComponent(u);switch(p){case'twitter':window.open('https://twitter.com/intent/tweet?text='+t+'&url='+eu,'_blank');break;case'telegram':window.open('https://t.me/share/url?url='+eu+'&text='+t,'_blank');break;case'kakao':if(!ensureKakao()){copyToClipboard(u);toast('링크 복사완료!');}else try{Kakao.Share.sendDefault({objectType:'feed',content:{title:'DA 마켓 점유율',description:'Ethereum·EigenDA·Celestia·Avail·Espresso·NEAR DA 시장 분석',imageUrl:'https://raw.githubusercontent.com/kittycapital/kittycapital.github.io/main/assets/herdvibe-og.png',link:{mobileWebUrl:u,webUrl:u}},buttons:[{title:'대시보드 보기',link:{mobileWebUrl:u,webUrl:u}}]});}catch(e){copyToClipboard(u);toast('링크 복사완료!');}break;case'instagram':copyToClipboard(u);flashCopied(btn);toast('링크 복사완료! 인스타그램에 붙여넣기 하세요');break;case'link':copyToClipboard(u);flashCopied(btn);toast('링크가 복사되었습니다 ✓');break;}}
+function toast(m){var c=document.querySelector('.toast-wrap');if(!c){c=document.createElement('div');c.className='toast-wrap';document.body.appendChild(c);}var t=document.createElement('div');t.className='toast';t.textContent=m;c.appendChild(t);setTimeout(function(){t.style.opacity='0';t.style.transform='translateY(12px)';t.style.transition='.3s';setTimeout(function(){t.remove();},300);},3000);}
+
+/* ===== WATERMARK ===== */
+var watermarkPlugin={id:'herdvibeWatermark',beforeDraw:function(ch){var ctx=ch.ctx,ca=ch.chartArea;if(!ca)return;ctx.save();ctx.font='700 28px "Plus Jakarta Sans",sans-serif';ctx.fillStyle='rgba(255,255,255,0.03)';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('Herdvibe.com',(ca.left+ca.right)/2,(ca.top+ca.bottom)/2);ctx.restore();}};
+Chart.register(watermarkPlugin);
+Chart.defaults.font.family="'JetBrains Mono','Noto Sans KR',monospace";
+Chart.defaults.font.size=10;Chart.defaults.color='#3a3a52';
+Chart.defaults.elements.point.radius=0;Chart.defaults.elements.point.hoverRadius=4;
+Chart.defaults.elements.line.borderWidth=2;Chart.defaults.animation.duration=600;
+Chart.defaults.responsive=true;Chart.defaults.maintainAspectRatio=false;
+var gridColor='rgba(255,255,255,0.04)';
+var tooltipStyle={backgroundColor:'rgba(10,10,10,0.95)',titleColor:'#e5e5e5',bodyColor:'#8a8a8a',borderColor:'rgba(255,255,255,0.08)',borderWidth:1,cornerRadius:6,padding:10};
+
+/* ===== DA DATA ===== */
+var DA={
+  ethereum:{name:'Ethereum',nameKo:'Ethereum',type:'Public Blockchain',rollups:42,tvlB:35.0,tp:0.08,cost:3.83,fin:'~12분',color:'#627EEA',desc:'Enshrined Bridge · Blobs + Calldata'},
+  eigenda:{name:'EigenDA',nameKo:'EigenDA',type:'DA Service',rollups:10,tvlB:1.56,tp:10.0,cost:0.03,fin:'~10초',color:'#1CC8EE',desc:'DACert Verifier · Restaking'},
+  celestia:{name:'Celestia',nameKo:'Celestia',type:'Public Blockchain',rollups:18,tvlB:0.194,tp:6.67,cost:0.07,fin:'~15초',color:'#9B59B6',desc:'Blobstream · DAS + NMT'},
+  avail:{name:'Avail',nameKo:'Avail',type:'Public Blockchain',rollups:5,tvlB:0.032,tp:4.0,cost:0.05,fin:'~20초',color:'#2ECC71',desc:'Vector · KZG + Erasure Coding'},
+  espresso:{name:'Espresso DA',nameKo:'Espresso DA',type:'DA Service',rollups:4,tvlB:0.018,tp:1.5,cost:0.08,fin:'~10초',color:'#F5A623',desc:'HotShot Light Client · TEE Bridge'},
+  nearda:{name:'NEAR DA',nameKo:'NEAR DA',type:'Public Blockchain',rollups:2,tvlB:0.004,tp:2.0,cost:0.02,fin:'~2초',color:'#00C08B',desc:'No Bridge · NEAR Protocol'}
+};
+var TL={labels:['2023 Q1','2023 Q3','2024 Q1','2024 Q3','2025 Q1','2025 Q3'],ethereum:[100,96,85,68,55,48],eigenda:[0,0,2,7,11,13],celestia:[0,2,8,15,19,22],avail:[0,0,1,3,5,7],espresso:[0,0,1,4,5,6],nearda:[0,2,3,3,5,4]};
+var CMAP={'Arbitrum One':'ethereum','Base':'ethereum','OP Mainnet':'ethereum','Starknet':'ethereum','ZKsync Era':'ethereum','Linea':'ethereum','Scroll':'ethereum','Blast':'ethereum','Taiko':'ethereum','Ink':'ethereum','Polygon zkEVM':'ethereum','Manta Pacific':'celestia','Eclipse':'celestia','Orderly':'celestia','Aevo':'celestia','Lyra':'celestia','Kinto':'celestia','Mantle':'eigenda','Celo':'eigenda','Ternoa':'avail'};
+
+function E(){return Object.entries(DA);}
+function TR(){return E().reduce(function(s,e){return s+e[1].rollups;},0);}
+function TT(){return E().reduce(function(s,e){return s+e[1].tvlB;},0);}
+
+async function fetchLlama(){try{var r=await fetch('https://api.llama.fi/v2/chains');if(!r.ok)throw 0;var c=await r.json(),tv={};Object.keys(DA).forEach(function(k){tv[k]=0;});c.forEach(function(x){var k=CMAP[x.name];if(k&&x.tvl)tv[k]+=x.tvl/1e9;});var t=0;Object.values(tv).forEach(function(v){t+=v;});if(t>5){Object.keys(tv).forEach(function(k){if(tv[k]>0.001)DA[k].tvlB=Math.round(tv[k]*1000)/1000;});document.getElementById('sApi').textContent='✓ 실시간';document.getElementById('sApi').className='ok';return;}throw 0;}catch(e){document.getElementById('sApi').textContent='✗ Fallback';document.getElementById('sApi').className='fl';}}
+
+function renderStats(){var tt=TT(),ep=((DA.ethereum.tvlB/tt)*100).toFixed(1);document.getElementById('totalProjects').textContent=TR()+'+';document.getElementById('ethShare').textContent=ep+'%';document.getElementById('altDaShare').textContent=(100-parseFloat(ep)).toFixed(1)+'%';document.getElementById('totalTVS').textContent='$'+tt.toFixed(1)+'B';var n=new Date();document.getElementById('lastUpdate').textContent=n.getFullYear()+'.'+(n.getMonth()+1)+'.'+n.getDate();}
+
+function renderKpis(){var h='',tr=TR(),tt=TT();E().forEach(function(e){var d=e[1];var tvlStr=d.tvlB>=1?'$'+d.tvlB.toFixed(1)+'B':'$'+(d.tvlB*1000).toFixed(1)+'M';var tvlPct=((d.tvlB/tt)*100).toFixed(1);h+='<div class="da-kpi"><div class="da-kpi-bar" style="background:'+d.color+'"></div><div class="da-kpi-head"><div class="da-kpi-dot" style="background:'+d.color+'"></div><span class="da-kpi-name">'+d.nameKo+'</span><span class="da-kpi-type">'+d.type+'</span></div><div class="da-kpi-row"><span class="label">롤업 수</span><span class="value">'+d.rollups+'개 ('+((d.rollups/tr)*100).toFixed(1)+'%)</span></div><div class="da-kpi-row"><span class="label">TVS</span><span class="value">'+tvlStr+' ('+tvlPct+'%)</span></div><div class="da-kpi-row"><span class="label">처리량</span><span class="value">'+d.tp+' MB/s</span></div><div class="da-kpi-row"><span class="label">비용/MB</span><span class="value">$'+d.cost+'</span></div><div class="da-kpi-row"><span class="label">Finality</span><span class="value">'+d.fin+'</span></div></div>';});document.getElementById('daKpiGrid').innerHTML=h;}
+
+function renderPieRollup(){var e=E(),t=TR();new Chart(document.getElementById('pieRollupCount'),{type:'doughnut',data:{labels:e.map(function(x){return x[1].nameKo;}),datasets:[{data:e.map(function(x){return x[1].rollups;}),backgroundColor:e.map(function(x){return x[1].color;}),borderColor:'#111',borderWidth:3,hoverOffset:8}]},options:{cutout:'58%',plugins:{legend:{display:false},tooltip:Object.assign({},tooltipStyle,{callbacks:{label:function(c){return' '+c.label+': '+c.raw+'개 ('+((c.raw/t)*100).toFixed(1)+'%)';}}})}},plugins:[{id:'c1',afterDraw:function(ch){var x=ch.ctx;x.save();x.textAlign='center';x.fillStyle='#e5e5e5';x.font="700 26px 'JetBrains Mono',monospace";x.fillText(t,ch.width/2,ch.height/2-2);x.fillStyle='#555';x.font="400 11px 'Noto Sans KR',sans-serif";x.fillText('전체 롤업',ch.width/2,ch.height/2+16);x.restore();}}]});}
+
+function renderPieTVL(){var e=E(),t=TT();new Chart(document.getElementById('pieTVL'),{type:'doughnut',data:{labels:e.map(function(x){return x[1].nameKo;}),datasets:[{data:e.map(function(x){return x[1].tvlB;}),backgroundColor:e.map(function(x){return x[1].color;}),borderColor:'#111',borderWidth:3,hoverOffset:8}]},options:{cutout:'58%',plugins:{legend:{display:false},tooltip:Object.assign({},tooltipStyle,{callbacks:{label:function(c){var v=c.raw>=1?'$'+c.raw.toFixed(2)+'B':'$'+(c.raw*1000).toFixed(1)+'M';return' '+c.label+': '+v+' ('+((c.raw/t)*100).toFixed(1)+'%)';}}})}},plugins:[{id:'c2',afterDraw:function(ch){var x=ch.ctx;x.save();x.textAlign='center';x.fillStyle='#e5e5e5';x.font="700 22px 'JetBrains Mono',monospace";x.fillText('$'+t.toFixed(1)+'B',ch.width/2,ch.height/2-2);x.fillStyle='#555';x.font="400 11px 'Noto Sans KR',sans-serif";x.fillText('전체 TVS',ch.width/2,ch.height/2+16);x.restore();}}]});}
+
+function renderBarTP(){var e=E();new Chart(document.getElementById('barThroughput'),{type:'bar',data:{labels:e.map(function(x){return x[1].name;}),datasets:[{data:e.map(function(x){return x[1].tp;}),backgroundColor:e.map(function(x){return x[1].color+'99';}),borderColor:e.map(function(x){return x[1].color;}),borderWidth:1,borderRadius:6,barThickness:32}]},options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:Object.assign({},tooltipStyle,{callbacks:{label:function(c){return' 처리량: '+c.raw+' MB/s';}}})},scales:{x:{grid:{color:gridColor,drawBorder:false},ticks:{color:'#555',font:{size:10},callback:function(v){return v+' MB/s';}}},y:{grid:{display:false},ticks:{color:'#8a8a8a',font:{size:11}}}}}});}
+
+function renderBarCost(){var e=E();new Chart(document.getElementById('barCost'),{type:'bar',data:{labels:e.map(function(x){return x[1].name;}),datasets:[{data:e.map(function(x){return x[1].cost;}),backgroundColor:e.map(function(x){return x[1].color+'99';}),borderColor:e.map(function(x){return x[1].color;}),borderWidth:1,borderRadius:6,barThickness:32}]},options:{plugins:{legend:{display:false},tooltip:Object.assign({},tooltipStyle,{callbacks:{label:function(c){return' 비용: $'+c.raw+'/MB';}}})},scales:{x:{grid:{display:false},ticks:{color:'#8a8a8a',font:{size:10}}},y:{type:'logarithmic',grid:{color:gridColor,drawBorder:false},ticks:{color:'#555',font:{size:10},callback:function(v){return'$'+v;}}}}}});}
+
+function renderTL(){var ds=[{k:'nearda',l:'NEAR DA',c:'#00C08B'},{k:'espresso',l:'Espresso DA',c:'#F5A623'},{k:'avail',l:'Avail',c:'#2ECC71'},{k:'celestia',l:'Celestia',c:'#9B59B6'},{k:'eigenda',l:'EigenDA',c:'#1CC8EE'},{k:'ethereum',l:'Ethereum',c:'#627EEA'}];new Chart(document.getElementById('lineTimeline'),{type:'line',data:{labels:TL.labels,datasets:ds.map(function(d,i){return{label:d.l,data:TL[d.k],borderColor:d.c,backgroundColor:d.c+'88',fill:i===0?'origin':'-1',tension:.4,pointRadius:0,borderWidth:1.5};})},options:{interaction:{intersect:false,mode:'index'},plugins:{legend:{position:'bottom',reverse:true,labels:{color:'#6e6e88',boxWidth:10,padding:14,font:{size:10}}},tooltip:Object.assign({},tooltipStyle,{itemSort:function(a,b){return b.datasetIndex-a.datasetIndex;},callbacks:{label:function(c){return' '+c.dataset.label+': '+c.raw+'%';}}})},scales:{x:{grid:{color:'rgba(255,255,255,0.03)',drawBorder:false},ticks:{color:'#555',font:{size:10}}},y:{stacked:true,max:100,min:0,grid:{color:gridColor,drawBorder:false},ticks:{color:'#555',font:{size:10},callback:function(v){return v+'%';}}}}},plugins:[watermarkPlugin]});}
+function renderTable(){var e=E(),tr=TR(),tt=TT(),h='<table class="ctable"><thead><tr><th style="text-align:left">DA 레이어</th><th>타입</th><th>롤업 수</th><th>TVS</th><th>처리량</th><th>비용/MB</th><th>Finality</th></tr></thead><tbody>';e.forEach(function(x){var d=x[1];var tvlStr=d.tvlB>=1?'$'+d.tvlB.toFixed(2)+'B':'$'+(d.tvlB*1000).toFixed(1)+'M';h+='<tr><td><div class="da-name-cell"><div class="da-color-dot" style="background:'+d.color+'"></div><span class="da-label-text">'+d.nameKo+'</span></div></td><td><span class="da-type-badge">'+d.type+'</span></td><td>'+d.rollups+'개 ('+((d.rollups/tr)*100).toFixed(1)+'%)</td><td>'+tvlStr+' ('+((d.tvlB/tt)*100).toFixed(1)+'%)</td><td>'+d.tp+' MB/s</td><td>$'+d.cost+'</td><td>'+d.fin+'</td></tr>';});h+='</tbody></table>';document.getElementById('tableWrap').innerHTML=h;}
+
+/* IFRAME RESIZE */
+var _lh=0,_ht,_fid='hvDAMarket';
+function sendHeight(){clearTimeout(_ht);_ht=setTimeout(function(){var el=document.querySelector('.hv-page');var h=(el?el.offsetTop+el.offsetHeight+20:document.body.scrollHeight);if(Math.abs(h-_lh)>5){_lh=h;window.parent.postMessage({type:'resize',height:h,id:_fid},'*');window.parent.postMessage({height:h,id:_fid},'*');}},150);}
+window.addEventListener('resize',sendHeight);
+window.addEventListener('load',function(){sendHeight();setTimeout(sendHeight,500);setTimeout(sendHeight,1500);setTimeout(sendHeight,3000);});
+new MutationObserver(sendHeight).observe(document.body,{childList:true,subtree:true});
+setInterval(sendHeight,2000);
+
+async function init(){await fetchLlama();renderStats();renderKpis();renderPieRollup();renderPieTVL();renderBarTP();renderBarCost();renderTL();renderTable();sendHeight();}
+init();
+</script>
+</body>
+</html>
